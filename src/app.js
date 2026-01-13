@@ -3,8 +3,10 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const pool = require("./db/db");
+
 const authRoutes = require("./routes/auth.routes");
 const waterRoutes = require("./routes/water.routes");
+const waterBlockchain = require("./blockchain/blockchainInstance");
 
 const app = express();
 app.use(cors());
@@ -12,6 +14,10 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/water", waterRoutes);
+app.get("/blockchain", (req, res) => {
+  res.json(waterBlockchain);
+});
+
 
 app.get("/", (req, res) => {
   res.send("Auth Backend Running");
