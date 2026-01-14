@@ -24,7 +24,7 @@ router.post("/register", async (req, res) => {
     );
 
     res.status(201).json({
-      message: "Registration successful. Await admin approval."
+      message: "Registration successful. Await admin approval.",
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -38,10 +38,9 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const [users] = await pool.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
+    const [users] = await pool.query("SELECT * FROM users WHERE email = ?", [
+      email,
+    ]);
 
     if (users.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
@@ -64,11 +63,14 @@ router.post("/login", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.json({ token });
+    res.json({
+      token,
+      role: user.role,
+      id: user.id,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;

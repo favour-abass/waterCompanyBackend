@@ -28,7 +28,8 @@ app.get("/test", async (req, res) => {
     const [rows] = await pool.query("SELECT 1");
     res.json({ message: "Database connected", rows });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("DB ERROR:", err);
+    res.status(500).json({ error: err?.message || err || "Unknown error" });
   }
 });
 

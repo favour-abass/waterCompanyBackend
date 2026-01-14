@@ -102,7 +102,6 @@ router.patch("/:serial/approve", auth, role("ADMIN"), async (req, res) => {
   }
 });
 
-
 /**
  * 4️⃣ Reject water pack (ADMIN only)
  */
@@ -133,10 +132,21 @@ router.patch("/:serial/reject", auth, role("ADMIN"), async (req, res) => {
       index: lastBlock.index + 1,
     };
 
-    const nonce = waterBlockchain.proofOfWork(previousBlockHash, currentBlockData);
-    const hash = waterBlockchain.hashBlock(previousBlockHash, currentBlockData, nonce);
+    const nonce = waterBlockchain.proofOfWork(
+      previousBlockHash,
+      currentBlockData
+    );
+    const hash = waterBlockchain.hashBlock(
+      previousBlockHash,
+      currentBlockData,
+      nonce
+    );
 
-    const newBlock = waterBlockchain.createNewBlock(nonce, previousBlockHash, hash);
+    const newBlock = waterBlockchain.createNewBlock(
+      nonce,
+      previousBlockHash,
+      hash
+    );
 
     res.json({
       message: `Water pack rejected: ${reason} (recorded on blockchain)`,
@@ -147,6 +157,60 @@ router.patch("/:serial/reject", auth, role("ADMIN"), async (req, res) => {
   }
 });
 
+/**
+ * Mark water pack as DISTRIBUTED
+ */
+router.patch(
+  "/:serial/distribute",
+  auth,
+  role("ADMIN"),
+  async (req, res) => {
+    try {
+      await pool.query(
+        `UPDATE water_packs SET status = 'DISTRIBUTED' WHERE serial_code = ?`,
+        [req.params.serial]
+      );
+
+      // Optionally record on blockchain
+      const transaction = waterBlockchain.createNewTransaction(
+        req.params.serial,
+        "DISTRIBUTED",
+        req.user.role
+      );
+      waterBlockchain.addTransactionToPendingTransactions(transaction);
+
+      res.json({
+        message: `Water pack ${req.params.serial} marked as DISTRIBUTED`,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+/**
+ * Mark water pack as SOLD
+ */
+router.patch("/:serial/sell", auth, role("ADMIN"), async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE water_packs SET status = 'SOLD' WHERE serial_code = ?`,
+      [req.params.serial]
+    );
+
+    // Optionally record on blockchain
+    const transaction = waterBlockchain.createNewTransaction(
+      req.params.serial,
+      "SOLD",
+      req.user.role
+    );
+    waterBlockchain.addTransactionToPendingTransactions(transaction);
+
+    res.json({ message: `Water pack ${req.params.serial} marked as SOLD` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * 5️⃣ Public verification endpoint DB
@@ -190,7 +254,9 @@ router.get("/verify/:serial/blockchain", async (req, res) => {
     }
 
     if (!found) {
-      return res.status(404).json({ error: "Water pack not found on blockchain" });
+      return res
+        .status(404)
+        .json({ error: "Water pack not found on blockchain" });
     }
 
     res.json(found);
@@ -198,6 +264,5 @@ router.get("/verify/:serial/blockchain", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;
