@@ -32,7 +32,7 @@ router.post("/", auth, role("admin"), async (req, res) => {
 /**
  * 2️⃣ Move water pack to TESTING (tester only)
  */
-router.patch("/:serial/test", auth, async (req, res) => {
+router.patch("/:serial/test", auth, role("admin"), async (req, res) => {
   try {
     // Only allow admin or tester
     if (req.user.role !== "tester" && req.user.role !== "admin") {
