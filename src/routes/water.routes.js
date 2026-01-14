@@ -8,9 +8,9 @@ const waterBlockchain = require("../blockchain/blockchainInstance");
 const router = express.Router();
 
 /**
- * 1️⃣ Create water pack (admin only)
+ * 1️⃣ Create water pack (ADMIN only)
  */
-router.post("/", auth, role("admin"), async (req, res) => {
+router.post("/", auth, role("ADMIN"), async (req, res) => {
   try {
     const serialCode = `WAT-${uuidv4()}`;
 
@@ -30,21 +30,21 @@ router.post("/", auth, role("admin"), async (req, res) => {
 });
 
 /**
- * 2️⃣ Move water pack to TESTING (tester only)
+ * 2️⃣ Move water pack to INSPECTOR (inspector only)
  */
 router.patch("/:serial/test", auth, async (req, res) => {
   try {
-    // Only allow admin or tester
-    if (req.user.role !== "tester" && req.user.role !== "admin") {
+    // Only allow ADMIN or inspector
+    if (req.user.role !== "inspector" && req.user.role !== "ADMIN") {
       return res.status(403).json({ error: "Access denied" });
     }
 
     await pool.query(
-      `UPDATE water_packs SET status = 'TESTING' WHERE serial_code = ?`,
+      `UPDATE water_packs SET status = 'INSPECTOR' WHERE serial_code = ?`,
       [req.params.serial]
     );
 
-    res.json({ message: "Water pack moved to TESTING stage" });
+    res.json({ message: "Water pack moved to INSPECTOR stage" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -53,7 +53,7 @@ router.patch("/:serial/test", auth, async (req, res) => {
 /**
  * 3️⃣ Approve water pack (admin only)
  */
-router.patch("/:serial/approve", auth, role("admin"), async (req, res) => {
+router.patch("/:serial/approve", auth, role("ADMIN"), async (req, res) => {
   try {
     await pool.query(
       `UPDATE water_packs SET status = 'APPROVED' WHERE serial_code = ?`,
@@ -104,9 +104,9 @@ router.patch("/:serial/approve", auth, role("admin"), async (req, res) => {
 
 
 /**
- * 4️⃣ Reject water pack (admin only)
+ * 4️⃣ Reject water pack (ADMIN only)
  */
-router.patch("/:serial/reject", auth, role("admin"), async (req, res) => {
+router.patch("/:serial/reject", auth, role("ADMIN"), async (req, res) => {
   try {
     const { reason } = req.body; // e.g., "CONTAMINATED", "EXPIRED"
     const status = `REJECTED_${reason.toUpperCase()}`;
@@ -149,7 +149,7 @@ router.patch("/:serial/reject", auth, role("admin"), async (req, res) => {
 
 
 /**
- * 5️⃣ Public verification endpoint
+ * 5️⃣ Public verification endpoint DB
  */
 router.get("/verify/:serial", async (req, res) => {
   try {
@@ -176,7 +176,7 @@ router.get("/verify/:serial/blockchain", async (req, res) => {
     let found = null;
     for (let i = waterBlockchain.chain.length - 1; i >= 0; i--) {
       const block = waterBlockchain.chain[i];
-      const tx = block.transactions.find(t => t.sender === serial);
+      const tx = block.transactions.find(t => t.serial === serial);
       if (tx) {
         found = {
           serial,
