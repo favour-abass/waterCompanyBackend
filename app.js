@@ -6,7 +6,7 @@ const pool = require("./db/db");
 
 const authRoutes = require("./routes/auth.routes");
 const waterRoutes = require("./routes/water.routes");
-const waterBlockchain = require("./blockchain/blockchainInstance");
+const waterBlockchain = require("./blockchain/blockchainService");
 
 const app = express();
 app.use(cors());
